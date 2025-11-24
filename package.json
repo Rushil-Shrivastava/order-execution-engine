@@ -6,7 +6,6 @@
     "dev": "ts-node-dev --respawn src/server.ts",
     "build": "tsc",
     "start": "node dist/src/server.js",
-    "worker": "node dist/src/workers/order.worker.js",
     "test": "vitest"
   },
   "dependencies": {

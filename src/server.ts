@@ -1,5 +1,6 @@
 import { buildApp } from "./app";
 import { logger } from "./utils/logger";
+import { worker } from './workers/order.worker';
 
 const PORT = Number(process.env.PORT || 3000);
 
@@ -15,3 +16,4 @@ async function start() {
 }
 
 start();
+worker.run();
