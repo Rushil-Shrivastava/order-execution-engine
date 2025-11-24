@@ -1,10 +1,30 @@
 import { Queue } from "bullmq";
-import IORedis from "ioredis";
+import IORedis, { RedisOptions } from "ioredis";
 
-const connection = new IORedis(process.env.REDIS_URL || "redis://localhost:6379", {
-  tls: {},
-  maxRetriesPerRequest: null
-});
+const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+
+const opts: RedisOptions = {
+  maxRetriesPerRequest: null,
+  // Add a connect timeout so errors surface quicker during deployments
+  connectTimeout: 10000
+};
+
+// Enable tls only when the URL scheme is rediss://
+if (redisUrl.startsWith("rediss://")) {
+  // include servername (SNI) so providers that require it will accept TLS
+  try {
+    const parsed = new URL(redisUrl);
+    opts.tls = { servername: parsed.hostname };
+  } catch {
+    opts.tls = {};
+  }
+}
+
+const connection = new IORedis(redisUrl, opts);
+// small diagnostic logs to help debug ETIMEDOUT while deploying
+connection.on("connect", () => console.info("[Redis] connecting"));
+connection.on("ready", () => console.info("[Redis] ready"));
+connection.on("error", (err) => console.error("[Redis] error", err));
 
 export interface OrderJobData {
   orderId: string;
