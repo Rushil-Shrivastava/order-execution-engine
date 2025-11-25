@@ -1,5 +1,6 @@
 import type { SocketStream } from "@fastify/websocket";
 import { OrderStatus } from "../db/orderRepository";
+import { getOrderById } from "../db/orderRepository"; // add or adjust path
 
 type WSClient = SocketStream;
 type OrderId = string;
@@ -20,12 +21,35 @@ export const wsManager = {
     clients.get(orderId)!.add(connection);
     console.info("[WS] registered", { orderId, count: clients.get(orderId)!.size });
 
-    // auto-unregister on close/error so tests that trigger close get cleaned up
+    // auto-unregister on close/error
     if (connection.socket && typeof connection.socket.on === "function") {
       const cleanup = () => this.unregister(orderId, connection);
       connection.socket.on("close", cleanup);
       connection.socket.on("error", cleanup);
     }
+
+    (async () => {
+      try {
+        const order = await getOrderById(orderId);
+        if (order) {
+          const payload = {
+            orderId,
+            status: order.status,
+            dex: order.dex,
+            txHash: order.tx_hash,
+            failure_reason: order.failure_reason,
+          };
+          try {
+            connection.socket.send(JSON.stringify(payload));
+            console.info("[WS] initial state sent", { orderId, status: order.status });
+          } catch (err) {
+            console.error("[WS] error sending initial state", err);
+          }
+        }
+      } catch (err) {
+        console.error("[WS] error fetching order", err);
+      }
+    })();
   },
 
   unregister(orderId: string, connection: WsConnection) {
@@ -45,7 +69,6 @@ export const wsManager = {
     const data = JSON.stringify(payload);
     for (const conn of set) {
       try {
-        // skip closed sockets, remove them
         if (conn.socket.readyState !== undefined && conn.socket.readyState !== 1) {
           this.unregister(orderId, conn);
           continue;
@@ -59,7 +82,6 @@ export const wsManager = {
     console.info("[WS] notify: sent", { orderId, payload });
   },
 
-  // convenience: builds payload and sends it to subscribers
   sendStatus(orderId: string, status: string, extra?: Record<string, any>) {
     const payload = { orderId, status, ...extra };
     this.notify(orderId, payload);
