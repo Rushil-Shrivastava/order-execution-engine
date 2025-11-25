@@ -143,3 +143,7 @@ Test coverage includes:
 - WebSocket lifecycle
 
 ---
+
+## Working Deployed API
+
+Base URL: `https://order-execution-engine-production-63f0.up.railway.app`

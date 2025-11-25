@@ -1,5 +1,6 @@
 import { buildApp } from "./app";
 import { logger } from "./utils/logger";
+import './workers/order.worker';
 
 const PORT = Number(process.env.PORT || 3000);
 
