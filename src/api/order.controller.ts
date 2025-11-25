@@ -45,6 +45,14 @@ export async function registerOrderRoutes(fastify: FastifyInstance) {
 
       wsManager.register(orderId, connection);
 
+      // Clean up on close/error to avoid stale references
+      const cleanup = () => wsManager.unregister(orderId, connection);
+      connection.socket.on("close", cleanup);
+      connection.socket.on("error", (err) => {
+        console.error("[WS] connection error", err);
+        cleanup();
+      });
+
       connection.socket.send(
         JSON.stringify({
           orderId,

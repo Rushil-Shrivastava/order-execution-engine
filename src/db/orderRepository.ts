@@ -71,3 +71,17 @@ export async function updateOrderStatus(
     values
   );
 }
+
+// get order by id
+export async function getOrderById(id: string): Promise<OrderRecord | undefined> {
+  const rows = await query<OrderRecord>(
+    `
+    SELECT *
+    FROM orders
+    WHERE id = $1
+    LIMIT 1;
+    `,
+    [id]
+  );
+  return rows[0];
+}

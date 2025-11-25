@@ -20,7 +20,7 @@ if (redisUrl.startsWith("rediss://")) {
   }
 }
 
-const connection = new IORedis(redisUrl, opts);
+export const connection = new IORedis(redisUrl, opts);
 // small diagnostic logs to help debug ETIMEDOUT while deploying
 connection.on("connect", () => console.info("[Redis] connecting"));
 connection.on("ready", () => console.info("[Redis] ready"));
