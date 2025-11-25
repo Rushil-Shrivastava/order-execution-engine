@@ -12,15 +12,21 @@ export async function registerOrderRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: "tokenIn, tokenOut, amount required" });
     }
 
-    const { orderId } = await orderService.createMarketOrder({
-      tokenIn,
-      tokenOut,
-      amount: Number(amount)
-    });
+    try {
+      const { orderId } = await orderService.createMarketOrder({
+        tokenIn,
+        tokenOut,
+        amount: Number(amount)
+      });
 
-    const wsUrl = `${request.protocol}://${request.headers.host}/api/orders/execute?orderId=${orderId}`;
+      const wsUrl = `${request.protocol}://${request.headers.host}/api/orders/execute?orderId=${orderId}`;
 
-    return reply.send({ orderId, wsUrl });
+      return reply.send({ orderId, wsUrl });
+    } catch (err: any) {
+      // log stack/message for debugging (do not leak sensitive info to clients)
+      console.error("[ERROR] Request error", err?.message, err?.stack);
+      return reply.status(500).send({ error: err?.message || "Internal Server Error" });
+    }
   });
 
   // GET (WebSocket) -> subscribe to order updates
